@@ -140,7 +140,7 @@ router.get('/me', verifyToken, async (req, res) => {
 // ==========================================
 // 1. GET /bookings (Admin/Manager: All bookings)
 // ==========================================
-router.get('/', verifyToken, requireRole(['admin', 'manager']), async (req, res) => {
+router.get('/', verifyToken, requireRole(['admin', 'manager', 'receptionist']), async (req, res) => {
   try {
     const snapshot = await db.collection('bookings').orderBy('createdAt', 'desc').get();
 
@@ -313,7 +313,7 @@ router.post('/', verifyToken, async (req, res) => {
 // ==========================================
 // 3. PUT /bookings/:id (Update)
 // ==========================================
-router.put('/:id', verifyToken, requireRole(['admin', 'manager']), async (req, res) => {
+router.put('/:id', verifyToken, requireRole(['admin', 'manager', 'receptionist']), async (req, res) => {
   try {
     const { id } = req.params;
     const { 

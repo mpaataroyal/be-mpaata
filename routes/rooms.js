@@ -56,13 +56,7 @@ router.get('/', async (req, res) => {
         if (now >= booking.checkIn && now < booking.checkOut) {
           calculatedStatus = 'Occupied';
           nextAvailable = booking.checkOut;
-          // Logic could be expanded here to check for back-to-back bookings
           break; // Found the current active booking
-        } else if (booking.checkIn > now) {
-          // Future booking exists. 
-          // If the gap between now and the future booking is small (e.g., < 2 hours), 
-          // you might consider it 'Booked', but usually it's 'Available' until check-in.
-          // For now, we leave it as Available unless currently occupied.
         }
       }
 
@@ -153,7 +147,7 @@ router.get('/:id', async (req, res) => {
 // 3. POST /api/v1/rooms 
 // Create new room (Admin only)
 // ==========================================
-router.post('/', verifyToken, requireRole(['admin', 'manager']), async (req, res) => {
+router.post('/', verifyToken, requireRole(['admin', 'manager',]), async (req, res) => {
   try {
     const { 
       roomNumber, 
@@ -187,7 +181,7 @@ router.post('/', verifyToken, requireRole(['admin', 'manager']), async (req, res
       roomNumber,
       type,
       price: Number(price),
-      status: status || 'Available', // Manual status usually just for Maintenance
+      status: status || 'Available',
       amenities: amenities || [],
       description: description || '',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -213,7 +207,7 @@ router.post('/', verifyToken, requireRole(['admin', 'manager']), async (req, res
 // 4. PUT /api/v1/rooms/:id 
 // Update room (Admin only)
 // ==========================================
-router.put('/:id', verifyToken, requireRole(['admin', 'manager']), async (req, res) => {
+router.put('/:id', verifyToken, requireRole(['admin', 'manager', 'receptionist']), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -222,7 +216,7 @@ router.put('/:id', verifyToken, requireRole(['admin', 'manager']), async (req, r
       roomNumber, 
       type, 
       price, 
-      status, // Admin can set 'Maintenance' here
+      status, 
       amenities, 
       description 
     } = updates;
@@ -255,6 +249,39 @@ router.put('/:id', verifyToken, requireRole(['admin', 'manager']), async (req, r
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedBy: req.user.uid
     };
+
+    // 🟢 FORCE END ACTIVE BOOKINGS LOGIC
+    // If Admin manually sets status to 'Available' or 'Maintenance', 
+    // we must end any currently running bookings to reflect this state immediately.
+    if (status === 'Available' || status === 'Maintenance') {
+      const now = new Date();
+      
+      const activeBookingsSnapshot = await db.collection('bookings')
+        .where('roomId', '==', id)
+        .where('status', 'in', ['confirmed', 'pending'])
+        .where('checkOut', '>', admin.firestore.Timestamp.fromDate(now))
+        .get();
+
+      const batch = db.batch();
+      let updatesCount = 0;
+
+      activeBookingsSnapshot.forEach(doc => {
+        const data = doc.data();
+        // If booking started in the past (is active now)
+        if (data.checkIn.toDate() <= now) {
+          batch.update(doc.ref, {
+            checkOut: admin.firestore.Timestamp.fromDate(now),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          updatesCount++;
+        }
+      });
+
+      if (updatesCount > 0) {
+        await batch.commit();
+        console.log(`Auto-ended ${updatesCount} bookings for room ${id} due to status change to ${status}`);
+      }
+    }
 
     await roomRef.update(cleanUpdates);
 

@@ -22,7 +22,7 @@ const formatPhoneNumber = (phone) => {
 // 1. GET /api/v1/users 
 // List all users + their roles
 // ==========================================
-router.get('/', verifyToken, requireRole(['admin']), async (req, res) => {
+router.get('/', verifyToken, requireRole(['admin', 'manager', 'receptionist']), async (req, res) => {
   try {
     const listUsersResult = await admin.auth().listUsers(1000);
 
@@ -91,7 +91,7 @@ router.get('/:uid', verifyToken, async (req, res) => {
 // 2. POST /api/v1/users 
 // Create a NEW user
 // ==========================================
-router.post('/', verifyToken, requireRole(['admin']), async (req, res) => {
+router.post('/', verifyToken, requireRole(['admin', 'manager']), async (req, res) => {
   try {
     const { email, password, phoneNumber, displayName, role } = req.body;
 

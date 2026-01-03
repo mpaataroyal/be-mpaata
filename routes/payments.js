@@ -56,7 +56,7 @@ router.get('/me', verifyToken, async (req, res) => {
 // ==========================================
 // 1. GET /api/v1/payments (List - Admin Only)
 // ==========================================
-router.get('/', verifyToken, requireRole(['admin', 'manager']), async (req, res) => {
+router.get('/', verifyToken, requireRole(['admin', 'manager', 'receptionist']), async (req, res) => {
   try {
     const snapshot = await db.collection('payments').orderBy('createdAt', 'desc').limit(100).get();
     
@@ -84,7 +84,7 @@ router.get('/', verifyToken, requireRole(['admin', 'manager']), async (req, res)
 // ==========================================
 // 2. PUT /api/v1/payments/:id (Update Status)
 // ==========================================
-router.put('/:id', verifyToken, requireRole(['admin', 'manager']), async (req, res) => {
+router.put('/:id', verifyToken, requireRole(['admin', 'manager', 'receptionist']), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body; 

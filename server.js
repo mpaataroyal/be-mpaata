@@ -48,14 +48,14 @@ const dashboardRoutes = require('./routes/dashboard');
 
 // Mount routes
 app.use('/api/v1/auth', authLimiter, authRoutes);
-app.use('/api/v1/users', apiLimiter, userRoutes);
-app.use('/api/v1/hotel', apiLimiter, hotelRoutes);
-app.use('/api/v1/rooms', apiLimiter, roomRoutes);
-app.use('/api/v1/availability', apiLimiter, availabilityRoutes);
-app.use('/api/v1/bookings', apiLimiter, bookingRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/hotel', hotelRoutes);
+app.use('/api/v1/rooms', roomRoutes);
+app.use('/api/v1/availability', availabilityRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/v1/cms', apiLimiter, cmsRoutes);
+app.use('/api/v1/cms', cmsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
